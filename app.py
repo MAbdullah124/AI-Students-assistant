@@ -1,6 +1,6 @@
 
 import streamlit as st
-import google.generativeai as genai
+from google import genai
 import io
 import json
 from datetime import date, datetime, timedelta
@@ -84,12 +84,11 @@ def get_api_key():
 API_KEY = get_api_key()
 
 if API_KEY:
-    genai.configure(api_key=API_KEY)
-
-    # Gemini model
-    model = genai.GenerativeModel("gemini-3.6-flash")
+    client = genai.Client(api_key=API_KEY)
 else:
-    model = None
+    client = None
+
+MODEL_NAME = "gemini-3.6-flash"
 
 
 # ============================================================
@@ -134,23 +133,17 @@ if "recent_activity" not in st.session_state:
 # HELPER FUNCTIONS
 # ============================================================
 
-def call_ai(prompt, temperature=0.4):
-    """
-    Send a prompt to Gemini and return the response.
-    """
-
-    if not model:
+def call_ai(prompt, temperature=None):
+    if not client:
         return (
             "⚠️ Gemini API key is missing.\n\n"
             "Please add your API key to Streamlit Secrets."
         )
 
     try:
-        response = model.generate_content(
-            prompt,
-            generation_config={
-                "temperature": temperature
-            }
+        response = client.models.generate_content(
+            model=MODEL_NAME,
+            contents=prompt
         )
 
         if response.text:
